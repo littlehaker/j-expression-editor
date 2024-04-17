@@ -1,113 +1,368 @@
-import Image from "next/image";
+"use client";
+
+import { useAtom, atom, createStore, Provider } from "jotai";
+import { splitAtom } from "jotai/utils";
+import type { WritableAtom } from "jotai";
+import { focusAtom } from "jotai-optics";
+
+import JExpression from "j-expression";
+import { ChangeEvent } from "react";
+
+interface Metrics {
+  value: number;
+  name: string;
+}
+
+const expr = new JExpression();
+const exprAtom = atom([
+  "$cond",
+  [["$gt", ["$minus", ["$metrics", "height"], 30], 30], "It's too high"],
+  [["$gt", ["$metrics", "width"], 80], "It's too wide"],
+  [true, "It's OK"],
+]);
+const metricsAtom = atom<Metrics[]>([
+  { name: "width", value: 100 },
+  { name: "height", value: 50 },
+]);
+const metricsByNameAtom = atom((get) => {
+  const metricsList = get(metricsAtom);
+  const ret: Record<string, number> = {};
+  metricsList.forEach((item) => {
+    ret[item.name] = item.value;
+  });
+  return ret;
+});
+
+const resultAtom = atom((get) => {
+  const metricsObj = get(metricsByNameAtom);
+  expr.define("metrics", (name: string) => {
+    return metricsObj[name] ?? 0;
+  });
+  return expr.eval(get(exprAtom));
+});
+
+interface StatementProps {
+  statementAtom: WritableAtom<any, any, any>;
+}
+
+function MetricsItem({
+  metricsAtom,
+}: {
+  metricsAtom: WritableAtom<Metrics, any, any>;
+}) {
+  const nameAtom = focusAtom(metricsAtom, (optic) => optic.prop("name"));
+  const [name] = useAtom(nameAtom);
+  const valueAtom = focusAtom(metricsAtom, (optic) => optic.prop("value"));
+
+  return (
+    <div>
+      {/* <Input statementAtom={nameAtom} /> */}
+      {name}:
+      <NumbericInput statementAtom={valueAtom} />
+    </div>
+  );
+}
+
+function MetricsEditor() {
+  const metricsListAtomsAtom = splitAtom(metricsAtom);
+  const [metricsListAtoms] = useAtom(metricsListAtomsAtom);
+
+  return (
+    <div>
+      Metrics
+      {metricsListAtoms.map((item) => (
+        <MetricsItem metricsAtom={item} />
+      ))}
+    </div>
+  );
+}
+
+const inputClass = "outline outline-gray-600 rounded-sm m-1 pl-2";
+const styleClass = "outline outline-gray-600 rounded-sm m-1 pl-2 w-auto h-6";
+
+function NumbericInput({ statementAtom, ...props }: StatementProps) {
+  const [value, setValue] = useAtom(statementAtom);
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    setValue(Number(e.target.value));
+  }
+  return (
+    <input
+      className={inputClass + " w-24"}
+      onChange={handleChange}
+      value={value}
+      type="number"
+      {...props}
+    />
+  );
+}
+
+function Input({ statementAtom, ...props }: StatementProps) {
+  const [value, setValue] = useAtom(statementAtom);
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    setValue(e.target.value);
+  }
+  return (
+    <input
+      className={inputClass}
+      onChange={handleChange}
+      value={value}
+      {...props}
+    />
+  );
+}
+
+function Select({
+  statementAtom,
+  options,
+}: StatementProps & { options: { label: string; value: string }[] }) {
+  const [value, setValue] = useAtom(statementAtom);
+  function handleChange(e: ChangeEvent<HTMLSelectElement>) {
+    setValue(e.target.value);
+  }
+  return (
+    <select className={styleClass} onChange={handleChange} value={value}>
+      {options.map(({ label, value }) => (
+        <option value={value} key={value}>
+          {label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+const spanClass = "px-3 mb-1";
+
+function ConditionItem({
+  statementAtom,
+  index,
+  listLength,
+  onAdd,
+  onRemove,
+}: StatementProps & {
+  index: number;
+  listLength: number;
+  onAdd: (index: number) => void;
+  onRemove: (index: number) => void;
+}) {
+  const [state] = useAtom(statementAtom);
+  const condAtom = focusAtom(statementAtom, (optic) => optic.at(0));
+  const valueAtom = focusAtom(statementAtom, (optic) => optic.at(1));
+  const isElse = state[0] === true;
+  const isFirst = index === 0;
+  return (
+    <div className="flex items-end">
+      {isElse ? (
+        <span className={spanClass}>Else</span>
+      ) : (
+        <>
+          <span className={spanClass}>{isFirst ? "If" : "Else If"}</span>
+          <Statement statementAtom={condAtom} />
+          <span className={spanClass}>Then</span>
+        </>
+      )}
+      <Statement statementAtom={valueAtom} />
+      {!isElse && (
+        <button
+          className="outline mb-1 px-2 rounded-sm mx-1"
+          onClick={() => onAdd(index)}
+        >
+          +
+        </button>
+      )}
+      {!isElse && listLength > 2 && (
+        <button
+          className="outline mb-1 px-2 rounded-sm mx-1"
+          onClick={() => onRemove(index)}
+        >
+          x
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Metrics({ statementAtom }: StatementProps) {
+  const [metricsList] = useAtom(metricsAtom);
+  const metricsNameAtom = focusAtom(statementAtom, (optic) => optic.at(1));
+  return (
+    <Select
+      statementAtom={metricsNameAtom}
+      options={metricsList.map(({ name, value }) => ({
+        label: `${name} ( ${value} )`,
+        value: name,
+      }))}
+    />
+  );
+}
+
+function Condition({ statementAtom }: StatementProps) {
+  const [state, setState] = useAtom(statementAtom);
+  const listAtomsAtom = splitAtom(statementAtom);
+  const [list] = useAtom(listAtomsAtom);
+
+  function handleAdd(index: number) {
+    setState([
+      ...state.slice(0, index + 2),
+      [["$gt", 2, 1], "baz"],
+      ...state.slice(index + 2),
+    ]);
+  }
+
+  function handleRemove(index: number) {
+    setState([...state.slice(0, index + 1), ...state.slice(index + 2)]);
+  }
+
+  return (
+    <div>
+      {list.slice(1).map((itemAtom, index) => (
+        <ConditionItem
+          key={index}
+          statementAtom={itemAtom}
+          index={index}
+          listLength={list.length - 1}
+          onAdd={handleAdd}
+          onRemove={handleRemove}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Comparison({ statementAtom }: StatementProps) {
+  const leftAtom = focusAtom(statementAtom, (optic) => optic.at(1));
+  const rightAtom = focusAtom(statementAtom, (optic) => optic.at(2));
+  const operatorAtom = focusAtom(statementAtom, (optic) => optic.at(0));
+  return (
+    <div className="flex items-end gap-2">
+      <Statement statementAtom={leftAtom} />
+      <Select
+        statementAtom={operatorAtom}
+        options={[
+          { label: ">", value: "$gt" },
+          { label: "<", value: "$lt" },
+          { label: "=", value: "$eq" },
+        ]}
+      />
+      <Statement statementAtom={rightAtom} />
+    </div>
+  );
+}
+function Computation({ statementAtom }: StatementProps) {
+  const leftAtom = focusAtom(statementAtom, (optic) => optic.at(1));
+  const rightAtom = focusAtom(statementAtom, (optic) => optic.at(2));
+  const operatorAtom = focusAtom(statementAtom, (optic) => optic.at(0));
+  return (
+    <div className="flex items-end gap-2">
+      <Statement statementAtom={leftAtom} />
+      <Select
+        statementAtom={operatorAtom}
+        options={[
+          { label: "+", value: "$add" },
+          { label: "-", value: "$minus" },
+        ]}
+      />
+      <Statement statementAtom={rightAtom} />
+    </div>
+  );
+}
+
+type StateType =
+  | "number"
+  | "string"
+  | "comparison"
+  | "condition"
+  | "computation"
+  | "metrics";
+function Statement({ statementAtom }: StatementProps) {
+  let type: StateType = "number";
+  const [state, setState] = useAtom(statementAtom);
+
+  if (state instanceof Array) {
+    const symbol = state[0].replace(/\$/, "");
+    if (["add", "minus"].includes(symbol)) {
+      type = "computation";
+    } else if (["gt", "lt", "eq"].includes(symbol)) {
+      type = "comparison";
+    } else if (["cond"].includes(symbol)) {
+      type = "condition";
+    } else if (["metrics"].includes(symbol)) {
+      type = "metrics";
+    }
+  }
+  if (typeof state === "string") {
+    type = "string";
+  }
+
+  const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === "string") {
+      setState("");
+    } else if (value === "number") {
+      setState(0);
+    } else if (value === "computation") {
+      setState(["$add", 1, 2]);
+    } else if (value === "comparison") {
+      setState(["$gt", 2, 1]);
+    } else if (value === "metrics") {
+      setState(["$metrics", "height"]);
+    } else {
+      setState(["$cond", [["$gt", 2, 1], "foo"], [true, "bar"]]);
+    }
+  };
+
+  return (
+    <div className="statement mt-1 hover:outline outline-gray-200 flex flex-col">
+      <select
+        onChange={handleChange}
+        value={type}
+        className="statement-type outline text-gray-400 outline-gray-200 invisible items-start"
+      >
+        <option value="number">Number</option>
+        <option value="string">String</option>
+        <option value="condition">Condition</option>
+        <option value="comparison">Comparison</option>
+        <option value="computation">Computation</option>
+        <option value="metrics">Metrics</option>
+      </select>
+
+      {type === "number" && <NumbericInput statementAtom={statementAtom} />}
+      {type === "string" && <Input statementAtom={statementAtom} />}
+      {type === "computation" && <Computation statementAtom={statementAtom} />}
+      {type === "comparison" && <Comparison statementAtom={statementAtom} />}
+      {type === "condition" && <Condition statementAtom={statementAtom} />}
+      {type === "metrics" && <Metrics statementAtom={statementAtom} />}
+    </div>
+  );
+}
 
 export default function Home() {
+  const [expr] = useAtom(exprAtom);
+  const [result] = useAtom(resultAtom);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+    <main className="flex flex-col items-center pt-10">
+      <MetricsEditor />
+      <hr className="my-10 w-full" />
+      <Statement statementAtom={exprAtom} />
+      <hr className="my-10 w-full" />
+      <table className="w-1/2 divide-y">
+        <thead>
+          <tr>
+            <td className="p-2">JExpression</td>
+            <td className="p-2">Result</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className="p-2">
+              <pre>{JSON.stringify(expr, null, 2)}</pre>
+            </td>
+            <td className="p-2">
+              <pre>{JSON.stringify(result)}</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </main>
   );
 }
