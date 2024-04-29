@@ -7,6 +7,8 @@ import Computation from "./Computation";
 import Comparison from "./Comparison";
 import Condition from "./Condition/Condition";
 import Metrics from "./Metrics/Metrics";
+import Select from "@mui/joy/Select";
+import Option from "@mui/joy/Option";
 
 type StateType =
   | "number"
@@ -46,18 +48,18 @@ export default function Statement({ statementAtom }: StatementProps) {
     } else if (value === "comparison") {
       setState(["$gt", 2, 1]);
     } else if (value === "metrics") {
-      setState(["$metrics", "height"]);
+      setState(["$metrics", "Height"]);
     } else {
       setState(["$cond", [["$gt", 2, 1], "foo"], [true, "bar"]]);
     }
   };
 
   return (
-    <div className="statement mt-1 hover:outline outline-gray-200 flex flex-col">
+    <div className="statement mt-1 hover:outline outline-gray-200 pt-6 rounded-sm relative">
       <select
         onChange={handleChange}
         value={type}
-        className="statement-type outline text-gray-400 outline-gray-200 invisible items-start"
+        className="statement-type outline text-gray-400 outline-gray-200 invisible absolute top-0 left-0 right-0"
       >
         <option value="number">Number</option>
         <option value="string">String</option>

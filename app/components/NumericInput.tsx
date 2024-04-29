@@ -1,23 +1,20 @@
 import { useAtom } from "jotai";
 import { ChangeEvent } from "react";
 import { StatementProps } from "../typing";
-import { inputClass } from "../constants";
+import JoyInput from "@mui/joy/Input";
 
-export default function NumbericInput({
-  statementAtom,
-  ...props
-}: StatementProps) {
+export default function NumbericInput({ statementAtom }: StatementProps) {
   const [value, setValue] = useAtom(statementAtom);
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     setValue(Number(e.target.value));
   }
   return (
-    <input
-      className={inputClass + " w-24"}
+    <JoyInput
+      className="w-32"
+      variant="outlined"
+      type="number"
       onChange={handleChange}
       value={value}
-      type="number"
-      {...props}
     />
   );
 }

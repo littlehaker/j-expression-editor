@@ -1,23 +1,23 @@
 import { useAtom } from "jotai";
-import { ChangeEvent } from "react";
-import { styleClass } from "../constants";
 import { StatementProps } from "../typing";
+import JoySelect from "@mui/joy/Select";
+import JoyOption from "@mui/joy/Option";
 
 export default function Select({
   statementAtom,
   options,
 }: StatementProps & { options: { label: string; value: string }[] }) {
   const [value, setValue] = useAtom(statementAtom);
-  function handleChange(e: ChangeEvent<HTMLSelectElement>) {
-    setValue(e.target.value);
+  function handleChange(_e: any, val: string) {
+    setValue(val);
   }
   return (
-    <select className={styleClass} onChange={handleChange} value={value}>
+    <JoySelect variant="outlined" onChange={handleChange} value={value}>
       {options.map(({ label, value }) => (
-        <option value={value} key={value}>
+        <JoyOption value={value} key={value}>
           {label}
-        </option>
+        </JoyOption>
       ))}
-    </select>
+    </JoySelect>
   );
 }

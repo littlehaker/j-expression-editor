@@ -1,7 +1,7 @@
 import { useAtom } from "jotai";
 import { ChangeEvent } from "react";
-import { inputClass } from "../constants";
 import { StatementProps } from "../typing";
+import JoyInput from "@mui/joy/Input";
 
 export default function Input({ statementAtom, ...props }: StatementProps) {
   const [value, setValue] = useAtom(statementAtom);
@@ -9,8 +9,8 @@ export default function Input({ statementAtom, ...props }: StatementProps) {
     setValue(e.target.value);
   }
   return (
-    <input
-      className={inputClass}
+    <JoyInput
+      variant="outlined"
       onChange={handleChange}
       value={value}
       {...props}

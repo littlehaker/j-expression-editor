@@ -3,6 +3,10 @@ import { StatementProps } from "@/app/typing";
 import { useAtom } from "jotai";
 import { focusAtom } from "jotai-optics";
 import Statement from "../Statement";
+import Button from "@mui/joy/Button";
+import IconButton from "@mui/joy/IconButton";
+import IconRemove from "@mui/icons-material/Remove";
+import IconAdd from "@mui/icons-material/Add";
 
 export default function ConditionItem({
   statementAtom,
@@ -34,20 +38,22 @@ export default function ConditionItem({
       )}
       <Statement statementAtom={valueAtom} />
       {!isElse && (
-        <button
-          className="outline mb-1 px-2 rounded-sm mx-1"
+        <IconButton
+          className="mx-1"
+          variant="outlined"
           onClick={() => onAdd(index)}
         >
-          +
-        </button>
+          <IconAdd />
+        </IconButton>
       )}
       {!isElse && listLength > 2 && (
-        <button
-          className="outline mb-1 px-2 rounded-sm mx-1"
+        <IconButton
+          className="mr-1"
+          variant="outlined"
           onClick={() => onRemove(index)}
         >
-          x
-        </button>
+          <IconRemove />
+        </IconButton>
       )}
     </div>
   );
