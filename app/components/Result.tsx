@@ -6,7 +6,7 @@ export default function Result() {
 
   return (
     <div className="px-5">
-      <pre>=> {JSON.stringify(result)}</pre>
+      <pre>=&gt; {JSON.stringify(result)}</pre>
     </div>
   );
 }
