@@ -22,4 +22,4 @@ Or you can visit an online demo powered by Vercel: https://j-expression-editor.v
 
 ## ScreenShot
 
-![screenshot](/docs/screenshot.jpg)
+![screenshot](/docs/screenshot.png)
