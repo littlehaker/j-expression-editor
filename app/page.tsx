@@ -19,7 +19,15 @@ import Expression from "./components/Expression";
 export default function Home() {
   return (
     <Stack spacing={2} className="p-5">
-      <Typography level="h2">JExpression Editor Demo</Typography>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Typography level="h2">JExpression Editor Demo</Typography>
+        <iframe
+          width="170"
+          height="30"
+          title="GitHub"
+          src="https://ghbtns.com/github-btn.html?user=littlehaker&repo=j-expression-editor&type=star&size=large"
+        />
+      </Stack>
       <Divider />
       <Tabs aria-label="Basic tabs" defaultValue={0}>
         <TabList>
