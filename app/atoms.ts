@@ -6,7 +6,7 @@ import { Metrics } from "./typing";
 export const expr = new JExpression();
 export const exprAtom = atom([
   "$cond",
-  [["$gt", ["$minus", ["$metrics", "Height"], 30], 30], "It's too high"],
+  [["$gt", ["$subtract", ["$metrics", "Height"], 30], 30], "It's too high"],
   [["$gt", ["$metrics", "Width"], 80], "It's too wide"],
   [true, "It's OK"],
 ]);

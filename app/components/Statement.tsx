@@ -7,8 +7,6 @@ import Computation from "./Computation";
 import Comparison from "./Comparison";
 import Condition from "./Condition/Condition";
 import Metrics from "./Metrics/Metrics";
-import Select from "@mui/joy/Select";
-import Option from "@mui/joy/Option";
 
 type StateType =
   | "number"
@@ -23,7 +21,7 @@ export default function Statement({ statementAtom }: StatementProps) {
 
   if (state instanceof Array) {
     const symbol = state[0].replace(/\$/, "");
-    if (["add", "minus"].includes(symbol)) {
+    if (["add", "subtract", "multiply", "divide"].includes(symbol)) {
       type = "computation";
     } else if (["gt", "lt", "eq"].includes(symbol)) {
       type = "comparison";

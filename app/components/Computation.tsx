@@ -14,7 +14,9 @@ export default function Computation({ statementAtom }: StatementProps) {
         statementAtom={operatorAtom}
         options={[
           { label: "+", value: "$add" },
-          { label: "-", value: "$minus" },
+          { label: "-", value: "$subtract" },
+          { label: "*", value: "$multiply" },
+          { label: "/", value: "$divide" },
         ]}
       />
       <Statement statementAtom={rightAtom} />
