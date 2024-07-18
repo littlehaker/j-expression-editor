@@ -7,12 +7,14 @@ import Computation from "./Computation";
 import Comparison from "./Comparison";
 import Condition from "./Condition/Condition";
 import Metrics from "./Metrics/Metrics";
+import Boolean from "./Boolean";
 
 type StateType =
   | "number"
   | "string"
   | "comparison"
   | "condition"
+  | "boolean"
   | "computation"
   | "metrics";
 export default function Statement({ statementAtom }: StatementProps) {
@@ -29,6 +31,8 @@ export default function Statement({ statementAtom }: StatementProps) {
       type = "condition";
     } else if (["metrics"].includes(symbol)) {
       type = "metrics";
+    } else if (["and", "or"].includes(symbol)) {
+      type = "boolean";
     }
   }
   if (typeof state === "string") {
@@ -47,6 +51,8 @@ export default function Statement({ statementAtom }: StatementProps) {
       setState(["$gt", 2, 1]);
     } else if (value === "metrics") {
       setState(["$metrics", "Height"]);
+    } else if (value === "boolean") {
+      setState(["$and", ["$gt", 2, 1], ["$lt", 1, 2]]);
     } else {
       setState(["$cond", [["$gt", 2, 1], "foo"], [true, "bar"]]);
     }
@@ -63,6 +69,7 @@ export default function Statement({ statementAtom }: StatementProps) {
         <option value="string">String</option>
         <option value="condition">Condition</option>
         <option value="comparison">Comparison</option>
+        <option value="boolean">Boolean</option>
         <option value="computation">Computation</option>
         <option value="metrics">Metrics</option>
       </select>
@@ -71,6 +78,7 @@ export default function Statement({ statementAtom }: StatementProps) {
       {type === "string" && <Input statementAtom={statementAtom} />}
       {type === "computation" && <Computation statementAtom={statementAtom} />}
       {type === "comparison" && <Comparison statementAtom={statementAtom} />}
+      {type === "boolean" && <Boolean statementAtom={statementAtom} />}
       {type === "condition" && <Condition statementAtom={statementAtom} />}
       {type === "metrics" && <Metrics statementAtom={statementAtom} />}
     </div>
