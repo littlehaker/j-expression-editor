@@ -7,7 +7,7 @@ import Computation from "./Computation";
 import Comparison from "./Comparison";
 import Condition from "./Condition/Condition";
 import Metrics from "./Metrics/Metrics";
-import Boolean from "./Boolean";
+import Boolean from "./Boolean/Boolean";
 
 type StateType =
   | "number"
