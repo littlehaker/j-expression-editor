@@ -27,8 +27,8 @@ export default function Boolean({ statementAtom }: StatementProps) {
         <Select
           statementAtom={list[0]}
           options={[
-            { label: "All matched", value: "$and" },
-            { label: "Any matched", value: "$or" },
+            { label: "AND", value: "$and" },
+            { label: "OR", value: "$or" },
           ]}
         />
       </div>
