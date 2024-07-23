@@ -9,6 +9,7 @@ export default function Computation({ statementAtom }: StatementProps) {
   const operatorAtom = focusAtom(statementAtom, (optic) => optic.at(0));
   return (
     <div className="flex items-end gap-2">
+      <span className="mb-1">(</span>
       <Statement statementAtom={leftAtom} />
       <Select
         statementAtom={operatorAtom}
@@ -20,6 +21,7 @@ export default function Computation({ statementAtom }: StatementProps) {
         ]}
       />
       <Statement statementAtom={rightAtom} />
+      <span className="mb-1">)</span>
     </div>
   );
 }
